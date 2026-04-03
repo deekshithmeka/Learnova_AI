@@ -14,6 +14,7 @@ PrepPulse is a Flask-based student learning platform with AI-assisted tutoring, 
   - Review comments and uploader email notifications.
 - YouTube Mindmap generator using transcript extraction and Mermaid output.
 - Resume upload and analysis with robust extraction fallbacks.
+- Streamlined glassmorphic dashboard layout focusing on essential status indicators (Skill Progress, Coding Practice, Mock Tests, and Activity Feed).
 - Progress tracker, habits, leaderboard, onboarding, auth, and admin utilities.
 - Knowledge-base refinement endpoints for adding courses, assessments, and certifications.
 
