@@ -83,6 +83,27 @@ from .db import (
     get_ai_refinement,
     get_ai_refinement_by_resource,
     update_ai_refinement,
+    # Full-stack placement features
+    get_random_unsolved_question,
+    get_questions_by_topic,
+    get_coding_topics,
+    mark_question_solved,
+    mark_question_skipped,
+    get_coding_stats,
+    create_interview_session,
+    update_interview_session,
+    list_interview_sessions,
+    get_interview_stats,
+    create_pipeline_entry,
+    list_pipeline_entries,
+    update_pipeline_entry,
+    delete_pipeline_entry,
+    get_pipeline_summary,
+    get_or_create_user_stats,
+    add_xp,
+    get_leaderboard_ranked,
+    get_user_rank,
+    get_recent_activity,
 )
 from .email_utils import send_email
 
@@ -3527,3 +3548,372 @@ def api_kb_status():
     except Exception as e:
         print(f"❌ Error getting KB status: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Coding Practice APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@main.route("/api/coding/daily")
+def api_coding_daily():
+    """Get a random unsolved coding question for the logged-in user."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    question = get_random_unsolved_question(current_app.config["DATABASE"], email)
+    if not question:
+        return jsonify({"message": "All questions solved!", "completed": True}), 200
+    return jsonify(question), 200
+
+
+@main.route("/api/coding/topics")
+def api_coding_topics():
+    """Get all coding topics with solved/total counts."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    topics = get_coding_topics(current_app.config["DATABASE"], email)
+    return jsonify(topics), 200
+
+
+@main.route("/api/coding/topic/<topic>")
+def api_coding_by_topic(topic):
+    """Get questions filtered by topic."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    questions = get_questions_by_topic(current_app.config["DATABASE"], email, topic)
+    return jsonify(questions), 200
+
+
+@main.route("/api/coding/solve/<int:qid>", methods=["POST"])
+def api_coding_solve(qid):
+    """Mark a question as solved."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    payload = request.get_json(silent=True) or {}
+    notes = payload.get("notes", "")
+    mark_question_solved(current_app.config["DATABASE"], email, qid, notes)
+    return jsonify({"success": True, "xp_earned": 10}), 200
+
+
+@main.route("/api/coding/skip/<int:qid>", methods=["POST"])
+def api_coding_skip(qid):
+    """Mark a question as skipped."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    mark_question_skipped(current_app.config["DATABASE"], email, qid)
+    return jsonify({"success": True}), 200
+
+
+@main.route("/api/coding/stats")
+def api_coding_stats():
+    """Get user's coding practice stats."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    stats = get_coding_stats(current_app.config["DATABASE"], email)
+    return jsonify(stats), 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Mock Interview APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@main.route("/api/interview/start", methods=["POST"])
+def api_interview_start():
+    """Start a new AI mock interview session."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    interview_type = payload.get("type", "Technical")
+
+    # Create session
+    session_id = create_interview_session(
+        current_app.config["DATABASE"], email, interview_type
+    )
+
+    # Generate first question using LLM
+    try:
+        client = _get_client()
+        prompt = f"""You are a senior technical interviewer at a top tech company.
+You are conducting a {interview_type} interview for a fresh graduate / entry-level SDE role.
+
+Generate your FIRST interview question. Be specific and technical.
+Provide ONLY the question, no explanation.
+
+Format:
+Question: [your question here]"""
+        response = client.chat.completions.create(
+            model=_get_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+        )
+        first_question = response.choices[0].message.content.strip()
+    except Exception:
+        first_question = "Tell me about a challenging technical project you've worked on and what you learned from it."
+
+    return jsonify({
+        "session_id": session_id,
+        "question": first_question,
+        "interview_type": interview_type,
+    }), 200
+
+
+@main.route("/api/interview/respond", methods=["POST"])
+def api_interview_respond():
+    """Submit an answer and get the next question or follow-up."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    session_id = payload.get("session_id")
+    answer = payload.get("answer", "").strip()
+    question_num = payload.get("question_num", 1)
+    prev_question = payload.get("previous_question", "")
+
+    if not answer:
+        return jsonify({"error": "Answer is required"}), 400
+
+    try:
+        client = _get_client()
+        prompt = f"""You are a senior technical interviewer continuing an interview.
+
+Previous question: {prev_question}
+Candidate's answer: {answer}
+Question number: {question_num}/5
+
+If this is question 5, provide a brief evaluation of the answer and say "Interview complete."
+Otherwise, give brief feedback on the answer (1-2 sentences), then ask the NEXT question.
+
+Format:
+Feedback: [brief feedback]
+Next Question: [next question or 'Interview complete.']"""
+        response = client.chat.completions.create(
+            model=_get_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+        )
+        result = response.choices[0].message.content.strip()
+    except Exception:
+        result = "Feedback: Good answer.\nNext Question: Can you explain the time complexity of your approach?"
+
+    is_complete = question_num >= 5 or "interview complete" in result.lower()
+
+    return jsonify({
+        "response": result,
+        "is_complete": is_complete,
+        "question_num": question_num + 1,
+    }), 200
+
+
+@main.route("/api/interview/end", methods=["POST"])
+def api_interview_end():
+    """End interview session and get final score."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    session_id = payload.get("session_id")
+    conversation = payload.get("conversation", [])
+
+    # Generate final score using LLM
+    try:
+        client = _get_client()
+        convo_text = "\n".join(
+            [f"Q: {c.get('question','')}\nA: {c.get('answer','')}" for c in conversation]
+        )
+        prompt = f"""You are evaluating a mock interview. Rate the candidate's overall performance.
+
+Interview transcript:
+{convo_text}
+
+Provide:
+1. Score out of 100
+2. Brief overall feedback (2-3 sentences)
+3. Key strengths (1-2 points)
+4. Areas to improve (1-2 points)
+
+Format your response as:
+Score: [NUMBER]
+Feedback: [text]
+Strengths: [text]
+Improve: [text]"""
+        response = client.chat.completions.create(
+            model=_get_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+        )
+        eval_text = response.choices[0].message.content.strip()
+
+        # Parse score
+        import re as regex
+        score_match = regex.search(r"Score:\s*(\d+)", eval_text)
+        score = int(score_match.group(1)) if score_match else 65
+    except Exception:
+        score = 70
+        eval_text = "Good attempt! Continue practicing to improve."
+
+    # Save to DB
+    if session_id:
+        update_interview_session(
+            current_app.config["DATABASE"], session_id, email,
+            score, eval_text, json.dumps(conversation)
+        )
+
+    add_xp(current_app.config["DATABASE"], email, 25)  # +25 XP per interview
+
+    return jsonify({
+        "score": score,
+        "feedback": eval_text,
+        "xp_earned": 25,
+    }), 200
+
+
+@main.route("/api/interview/history")
+def api_interview_history():
+    """Get user's interview history."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    sessions = list_interview_sessions(current_app.config["DATABASE"], email)
+    stats = get_interview_stats(current_app.config["DATABASE"], email)
+    return jsonify({"sessions": sessions, "stats": stats}), 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Placement Pipeline APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@main.route("/api/pipeline", methods=["GET"])
+def api_pipeline_list():
+    """Get all pipeline entries + summary."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    entries = list_pipeline_entries(current_app.config["DATABASE"], email)
+    summary = get_pipeline_summary(current_app.config["DATABASE"], email)
+    return jsonify({"entries": entries, "summary": summary}), 200
+
+
+@main.route("/api/pipeline", methods=["POST"])
+def api_pipeline_create():
+    """Add a new pipeline entry."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    payload = request.get_json(silent=True) or {}
+    company = payload.get("company", "").strip()
+    if not company:
+        return jsonify({"error": "Company name is required"}), 400
+    entry_id = create_pipeline_entry(
+        current_app.config["DATABASE"], email,
+        company,
+        payload.get("role", "SDE"),
+        payload.get("status", "applied"),
+        payload.get("notes", ""),
+    )
+    add_xp(current_app.config["DATABASE"], email, 5)  # +5 XP per application
+    return jsonify({"success": True, "id": entry_id, "xp_earned": 5}), 201
+
+
+@main.route("/api/pipeline/<int:entry_id>", methods=["PUT"])
+def api_pipeline_update(entry_id):
+    """Update a pipeline entry."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    payload = request.get_json(silent=True) or {}
+    updated = update_pipeline_entry(
+        current_app.config["DATABASE"], entry_id, email, **payload
+    )
+    if not updated:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"success": True}), 200
+
+
+@main.route("/api/pipeline/<int:entry_id>", methods=["DELETE"])
+def api_pipeline_delete(entry_id):
+    """Delete a pipeline entry."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    deleted = delete_pipeline_entry(
+        current_app.config["DATABASE"], entry_id, email
+    )
+    if not deleted:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"success": True}), 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dashboard Summary + User Stats + Leaderboard APIs
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@main.route("/api/dashboard/summary")
+def api_dashboard_summary():
+    """Aggregated data for all dashboard module cards."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    db = current_app.config["DATABASE"]
+
+    coding_stats = get_coding_stats(db, email)
+    pipeline = get_pipeline_summary(db, email)
+    interview_stats = get_interview_stats(db, email)
+    user_rank = get_user_rank(db, email)
+    activity = get_recent_activity(db, email)
+
+    # ATS score from latest resume
+    resume = get_latest_resume(db, email)
+    ats_score = None
+    ats_suggestions = []
+    if resume and resume["ats_score"]:
+        ats_score = resume["ats_score"]
+        if resume["analysis_data"]:
+            try:
+                analysis = json.loads(resume["analysis_data"])
+                ats_suggestions = analysis.get("suggestions", analysis.get("improvements", []))[:3]
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+    return jsonify({
+        "coding": coding_stats,
+        "pipeline": pipeline,
+        "interview": interview_stats,
+        "rank": user_rank,
+        "activity": activity,
+        "ats": {
+            "score": ats_score,
+            "suggestions": ats_suggestions,
+        },
+    }), 200
+
+
+@main.route("/api/user/stats")
+def api_user_stats():
+    """Get current user's XP and rank."""
+    email = session.get("user_email")
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+    stats = get_or_create_user_stats(current_app.config["DATABASE"], email)
+    rank = get_user_rank(current_app.config["DATABASE"], email)
+    return jsonify({**stats, **rank}), 200
+
+
+@main.route("/api/leaderboard")
+def api_leaderboard():
+    """Get XP-based leaderboard."""
+    board = get_leaderboard_ranked(current_app.config["DATABASE"])
+    return jsonify(board), 200

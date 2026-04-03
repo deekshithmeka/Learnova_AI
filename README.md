@@ -9,9 +9,9 @@ PrepPulse is a Flask-based student learning platform with AI-assisted tutoring, 
 - Instant Note Maker to generate AI notes, export PDF, and submit to resources.
 - Resources module with upload, review workflow, filters, preview, download, comments, and AI refinement.
 - Admin resource moderation with:
-    - Pending approvals pagination (default 3 per page).
-    - Live resources management (edit/delete approved resources).
-    - Review comments and uploader email notifications.
+  - Pending approvals pagination (default 3 per page).
+  - Live resources management (edit/delete approved resources).
+  - Review comments and uploader email notifications.
 - YouTube Mindmap generator using transcript extraction and Mermaid output.
 - Resume upload and analysis with robust extraction fallbacks.
 - Progress tracker, habits, leaderboard, onboarding, auth, and admin utilities.
@@ -20,24 +20,24 @@ PrepPulse is a Flask-based student learning platform with AI-assisted tutoring, 
 ## Core Features
 
 - Authentication
-    - Register, login, logout, forgot/reset password via SMTP.
+  - Register, login, logout, forgot/reset password via SMTP.
 - AI Chatbot
-    - OpenAI-based responses, optional speech synthesis, prompt-injection guards, RAG context.
+  - OpenAI-based responses, optional speech synthesis, prompt-injection guards, RAG context.
 - Chat History
-    - Paginated history retrieval and delete endpoints.
+  - Paginated history retrieval and delete endpoints.
 - Notes and Resources
-    - Generate notes with AI, create PDF, upload to resource review queue.
-    - Resource deduplication by content hash.
-    - User-owned resource edit/delete flows.
-    - Resource comments and AI refinement (summary, Q and A, mindmaps).
+  - Generate notes with AI, create PDF, upload to resource review queue.
+  - Resource deduplication by content hash.
+  - User-owned resource edit/delete flows.
+  - Resource comments and AI refinement (summary, Q and A, mindmaps).
 - YouTube Mindmap
-    - Transcript fetch (Apify with fallback), LLM mindmap generation, Mermaid links.
+  - Transcript fetch (Apify with fallback), LLM mindmap generation, Mermaid links.
 - Resume Analyzer
-    - Resume parsing for PDF or DOCX and AI analysis.
+  - Resume parsing for PDF or DOCX and AI analysis.
 - Admin Panel
-    - Users, database explorer, SQL console, leaderboard, and resources moderation.
+  - Users, database explorer, SQL console, leaderboard, and resources moderation.
 - KB Management
-    - Add and search structured learning content through API.
+  - Add and search structured learning content through API.
 
 ## Tech Stack
 
@@ -211,7 +211,7 @@ App URL: http://127.0.0.1:5000
 
 ## Notes for Maintainers
 
-- Database path is configured in app.__init__ as data/learnova_ai.db.
+- Database path is configured in app.**init** as data/learnova_ai.db.
 - RAG vector initialization runs during app startup.
 - If you update the knowledge-base JSON files, restart the app and validate KB and RAG behavior.
 - A helper script exists for sqlite to postgres migration in scripts/migrate_sqlite_to_postgres.py.

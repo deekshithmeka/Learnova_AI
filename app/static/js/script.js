@@ -4,7 +4,7 @@ const canvas = document.getElementById('spline-canvas');
 const spline = new Application(canvas);
 
 spline
-  .load('https://prod.spline.design/DnXAqtyKw-iDe3dt/scene.splinecode')
+  .load('https://prod.spline.design/f6urL71l3rlbQAHC/scene.splinecode')
   .then(() => {
     console.log('Spline scene loaded');
   })

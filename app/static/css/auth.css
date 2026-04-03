@@ -26,6 +26,17 @@
     transform: scale(1.02);
 }
 
+.auth-page > iframe.spline-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: 0;
+    filter: blur(6px);
+    transform: scale(1.02);
+}
+
 .auth-page::before {
     content: "";
     position: fixed;
@@ -771,7 +782,7 @@
     flex-direction: column;
     height: auto;
     min-height: 100vh;
-    padding: 72px 6vw 6vh;
+    padding: 32px 36px 48px;
     gap: 24px;
 }
 

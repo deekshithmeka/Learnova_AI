@@ -188,7 +188,84 @@ def init_db(app):
             )
             """
         )
+        # ── New tables for full-stack placement features ──
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS coding_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                topic TEXT NOT NULL,
+                title TEXT NOT NULL,
+                companies TEXT,
+                remarks TEXT,
+                difficulty TEXT NOT NULL DEFAULT 'Medium',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS coding_submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                question_id INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'attempted',
+                notes TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (question_id) REFERENCES coding_questions(id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS interview_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                interview_type TEXT NOT NULL DEFAULT 'Technical',
+                score REAL,
+                max_score REAL NOT NULL DEFAULT 100,
+                feedback TEXT,
+                conversation_data TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS pipeline_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                company TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'SDE',
+                status TEXT NOT NULL DEFAULT 'applied',
+                notes TEXT,
+                applied_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                xp_points INTEGER NOT NULL DEFAULT 0,
+                coding_streak INTEGER NOT NULL DEFAULT 0,
+                last_coding_date TEXT,
+                total_problems_solved INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         conn.commit()
+
+    # Seed coding questions on first run
+    try:
+        from .seed_questions import seed_coding_questions
+        seeded = seed_coding_questions(str(db_path))
+        if seeded:
+            print(f"✅ [SEED] Coding questions loaded: {seeded} questions")
+    except Exception as e:
+        print(f"⚠️  [SEED] Could not seed coding questions: {e}")
 def get_connection(db_path):
     """Return a sqlite3 connection with Row factory."""
     conn = sqlite3.connect(db_path)
@@ -1216,3 +1293,449 @@ def list_user_ai_refinements(db_path, user_email):
             (user_email,),
         )
         return [dict(r) for r in cur.fetchall()]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Coding Practice
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def get_random_unsolved_question(db_path, email):
+    """Get a random coding question the user hasn't solved yet."""
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            SELECT cq.* FROM coding_questions cq
+            WHERE cq.id NOT IN (
+                SELECT question_id FROM coding_submissions
+                WHERE email = ? AND status = 'solved'
+            )
+            ORDER BY RANDOM()
+            LIMIT 1
+            """,
+            (email,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_questions_by_topic(db_path, email, topic):
+    """Get all questions for a topic with user's solve status."""
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            SELECT cq.*,
+                CASE WHEN cs.status = 'solved' THEN 1 ELSE 0 END AS is_solved
+            FROM coding_questions cq
+            LEFT JOIN coding_submissions cs
+                ON cs.question_id = cq.id AND cs.email = ?
+            WHERE cq.topic = ?
+            ORDER BY cq.difficulty, cq.title
+            """,
+            (email, topic),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_coding_topics(db_path, email):
+    """Get all topics with total and solved counts."""
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            SELECT cq.topic,
+                COUNT(*) AS total,
+                COUNT(CASE WHEN cs.status = 'solved' THEN 1 END) AS solved
+            FROM coding_questions cq
+            LEFT JOIN coding_submissions cs
+                ON cs.question_id = cq.id AND cs.email = ?
+            GROUP BY cq.topic
+            ORDER BY cq.topic
+            """,
+            (email,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def mark_question_solved(db_path, email, question_id, notes=""):
+    """Mark a question as solved."""
+    with get_connection(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO coding_submissions (email, question_id, status, notes)
+            VALUES (?, ?, 'solved', ?)
+            ON CONFLICT DO NOTHING
+            """,
+            (email, question_id, notes),
+        )
+        conn.commit()
+    _update_coding_streak(db_path, email)
+    add_xp(db_path, email, 10)  # +10 XP per solve
+
+
+def mark_question_skipped(db_path, email, question_id):
+    """Mark a question as skipped."""
+    with get_connection(db_path) as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO coding_submissions (email, question_id, status)
+            VALUES (?, ?, 'skipped')
+            """,
+            (email, question_id),
+        )
+        conn.commit()
+
+
+def get_coding_stats(db_path, email):
+    """Get coding practice stats for a user."""
+    with get_connection(db_path) as conn:
+        total_qs = conn.execute("SELECT COUNT(*) FROM coding_questions").fetchone()[0]
+        solved = conn.execute(
+            "SELECT COUNT(*) FROM coding_submissions WHERE email = ? AND status = 'solved'",
+            (email,),
+        ).fetchone()[0]
+        skipped = conn.execute(
+            "SELECT COUNT(*) FROM coding_submissions WHERE email = ? AND status = 'skipped'",
+            (email,),
+        ).fetchone()[0]
+
+        # Topic-wise breakdown
+        cur = conn.execute(
+            """
+            SELECT cq.topic, cq.difficulty,
+                COUNT(CASE WHEN cs.status = 'solved' THEN 1 END) AS solved,
+                COUNT(*) AS total
+            FROM coding_questions cq
+            LEFT JOIN coding_submissions cs
+                ON cs.question_id = cq.id AND cs.email = ?
+            GROUP BY cq.topic, cq.difficulty
+            """,
+            (email,),
+        )
+        breakdown = [dict(r) for r in cur.fetchall()]
+
+    stats = get_or_create_user_stats(db_path, email)
+    return {
+        "total_questions": total_qs,
+        "solved": solved,
+        "skipped": skipped,
+        "remaining": total_qs - solved,
+        "streak": stats.get("coding_streak", 0),
+        "accuracy": round((solved / max(solved + skipped, 1)) * 100, 1),
+        "breakdown": breakdown,
+    }
+
+
+def _update_coding_streak(db_path, email):
+    """Update the coding streak for a user."""
+    from datetime import datetime, timedelta
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT coding_streak, last_coding_date FROM user_stats WHERE email = ?",
+            (email,),
+        ).fetchone()
+
+        if not row:
+            conn.execute(
+                "INSERT INTO user_stats (email, coding_streak, last_coding_date, total_problems_solved) VALUES (?, 1, ?, 1)",
+                (email, today),
+            )
+        else:
+            last_date = row["last_coding_date"]
+            streak = row["coding_streak"] or 0
+            if last_date == today:
+                # Already coded today, just increment total
+                conn.execute(
+                    "UPDATE user_stats SET total_problems_solved = total_problems_solved + 1, updated_at = datetime('now') WHERE email = ?",
+                    (email,),
+                )
+            elif last_date == (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"):
+                conn.execute(
+                    "UPDATE user_stats SET coding_streak = ?, last_coding_date = ?, total_problems_solved = total_problems_solved + 1, updated_at = datetime('now') WHERE email = ?",
+                    (streak + 1, today, email),
+                )
+            else:
+                conn.execute(
+                    "UPDATE user_stats SET coding_streak = 1, last_coding_date = ?, total_problems_solved = total_problems_solved + 1, updated_at = datetime('now') WHERE email = ?",
+                    (today, email),
+                )
+        conn.commit()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Mock Interview
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def create_interview_session(db_path, email, interview_type, score=None, feedback=None, conversation_data=None):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO interview_sessions (email, interview_type, score, feedback, conversation_data)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (email, interview_type, score, feedback, conversation_data),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def update_interview_session(db_path, session_id, email, score, feedback, conversation_data):
+    with get_connection(db_path) as conn:
+        conn.execute(
+            """
+            UPDATE interview_sessions
+            SET score = ?, feedback = ?, conversation_data = ?
+            WHERE id = ? AND email = ?
+            """,
+            (score, feedback, conversation_data, session_id, email),
+        )
+        conn.commit()
+
+
+def list_interview_sessions(db_path, email):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            "SELECT * FROM interview_sessions WHERE email = ? ORDER BY created_at DESC LIMIT 20",
+            (email,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_interview_stats(db_path, email):
+    with get_connection(db_path) as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM interview_sessions WHERE email = ?", (email,)
+        ).fetchone()[0]
+        avg_score = conn.execute(
+            "SELECT AVG(score) FROM interview_sessions WHERE email = ? AND score IS NOT NULL",
+            (email,),
+        ).fetchone()[0]
+        best = conn.execute(
+            "SELECT MAX(score) FROM interview_sessions WHERE email = ? AND score IS NOT NULL",
+            (email,),
+        ).fetchone()[0]
+    return {
+        "total_interviews": total,
+        "avg_score": round(avg_score, 1) if avg_score else 0,
+        "best_score": round(best, 1) if best else 0,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Placement Pipeline
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def create_pipeline_entry(db_path, email, company, role="SDE", status="applied", notes=""):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO pipeline_entries (email, company, role, status, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (email, company, role, status, notes),
+        )
+        conn.commit()
+        return cur.lastrowid
+
+
+def list_pipeline_entries(db_path, email):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            "SELECT * FROM pipeline_entries WHERE email = ? ORDER BY applied_date DESC",
+            (email,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def update_pipeline_entry(db_path, entry_id, email, **kwargs):
+    allowed = {"company", "role", "status", "notes"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+    if not updates:
+        return 0
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values()) + [entry_id, email]
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            f"UPDATE pipeline_entries SET {set_clause}, updated_at = datetime('now') WHERE id = ? AND email = ?",
+            values,
+        )
+        conn.commit()
+        return cur.rowcount
+
+
+def delete_pipeline_entry(db_path, entry_id, email):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            "DELETE FROM pipeline_entries WHERE id = ? AND email = ?",
+            (entry_id, email),
+        )
+        conn.commit()
+        return cur.rowcount
+
+
+def get_pipeline_summary(db_path, email):
+    with get_connection(db_path) as conn:
+        applied = conn.execute(
+            "SELECT COUNT(*) FROM pipeline_entries WHERE email = ? AND status = 'applied'",
+            (email,),
+        ).fetchone()[0]
+        interviewing = conn.execute(
+            "SELECT COUNT(*) FROM pipeline_entries WHERE email = ? AND status = 'interviewing'",
+            (email,),
+        ).fetchone()[0]
+        offered = conn.execute(
+            "SELECT COUNT(*) FROM pipeline_entries WHERE email = ? AND status = 'offered'",
+            (email,),
+        ).fetchone()[0]
+        rejected = conn.execute(
+            "SELECT COUNT(*) FROM pipeline_entries WHERE email = ? AND status = 'rejected'",
+            (email,),
+        ).fetchone()[0]
+    return {
+        "applied": applied,
+        "interviewing": interviewing,
+        "offered": offered,
+        "rejected": rejected,
+        "total": applied + interviewing + offered + rejected,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# User Stats / XP / Leaderboard
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def get_or_create_user_stats(db_path, email):
+    with get_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT * FROM user_stats WHERE email = ?", (email,)
+        ).fetchone()
+        if row:
+            return dict(row)
+        conn.execute(
+            "INSERT INTO user_stats (email) VALUES (?)", (email,)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM user_stats WHERE email = ?", (email,)
+        ).fetchone()
+        return dict(row)
+
+
+def add_xp(db_path, email, points):
+    with get_connection(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO user_stats (email, xp_points) VALUES (?, ?)
+            ON CONFLICT(email) DO UPDATE SET
+                xp_points = xp_points + ?,
+                updated_at = datetime('now')
+            """,
+            (email, points, points),
+        )
+        conn.commit()
+
+
+def get_leaderboard_ranked(db_path, limit=20):
+    with get_connection(db_path) as conn:
+        cur = conn.execute(
+            """
+            SELECT us.email, us.xp_points, us.coding_streak, us.total_problems_solved,
+                   u.full_name
+            FROM user_stats us
+            LEFT JOIN users u ON u.email = us.email
+            WHERE us.xp_points > 0
+            ORDER BY us.xp_points DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        results = []
+        for i, row in enumerate(cur.fetchall(), 1):
+            d = dict(row)
+            d["rank"] = i
+            d["name"] = d.get("full_name") or d["email"].split("@")[0]
+            results.append(d)
+        return results
+
+
+def get_user_rank(db_path, email):
+    """Get specific user's rank."""
+    board = get_leaderboard_ranked(db_path, limit=1000)
+    for entry in board:
+        if entry["email"] == email:
+            return entry
+    stats = get_or_create_user_stats(db_path, email)
+    return {
+        "rank": len(board) + 1,
+        "xp_points": stats.get("xp_points", 0),
+        "coding_streak": stats.get("coding_streak", 0),
+        "total_problems_solved": stats.get("total_problems_solved", 0),
+    }
+
+
+def get_recent_activity(db_path, email, limit=5):
+    """Get recent activity items for a user."""
+    activities = []
+    with get_connection(db_path) as conn:
+        # Recent coding solves
+        cur = conn.execute(
+            """
+            SELECT 'coding' AS type, cq.title AS title, cs.created_at,
+                   cq.topic AS detail
+            FROM coding_submissions cs
+            JOIN coding_questions cq ON cq.id = cs.question_id
+            WHERE cs.email = ? AND cs.status = 'solved'
+            ORDER BY cs.created_at DESC LIMIT 3
+            """,
+            (email,),
+        )
+        activities.extend([dict(r) for r in cur.fetchall()])
+
+        # Recent mock tests
+        cur = conn.execute(
+            """
+            SELECT 'mock_test' AS type, test_name AS title, created_at,
+                   CAST(score AS TEXT) || '/' || CAST(max_score AS TEXT) AS detail
+            FROM mock_tests
+            WHERE email = ?
+            ORDER BY created_at DESC LIMIT 3
+            """,
+            (email,),
+        )
+        activities.extend([dict(r) for r in cur.fetchall()])
+
+        # Recent interviews
+        cur = conn.execute(
+            """
+            SELECT 'interview' AS type,
+                   interview_type || ' Interview' AS title, created_at,
+                   CAST(COALESCE(score, 0) AS TEXT) || '/100' AS detail
+            FROM interview_sessions
+            WHERE email = ?
+            ORDER BY created_at DESC LIMIT 2
+            """,
+            (email,),
+        )
+        activities.extend([dict(r) for r in cur.fetchall()])
+
+        # Recent pipeline entries
+        cur = conn.execute(
+            """
+            SELECT 'pipeline' AS type,
+                   company || ' - ' || role AS title, applied_date AS created_at,
+                   status AS detail
+            FROM pipeline_entries
+            WHERE email = ?
+            ORDER BY applied_date DESC LIMIT 2
+            """,
+            (email,),
+        )
+        activities.extend([dict(r) for r in cur.fetchall()])
+
+    # Sort all by time, most recent first
+    activities.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return activities[:limit]
