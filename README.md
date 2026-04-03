@@ -1,4 +1,4 @@
-# PrepPulse - AI Learning and Resource Platform
+# Learnova AI - AI Learning and Resource Platform
 
 PrepPulse is a Flask-based student learning platform with AI-assisted tutoring, resource sharing, automated note generation, YouTube transcript-to-mindmap conversion, resume analysis, progress tracking, and admin moderation tools.
 
@@ -211,7 +211,7 @@ App URL: http://127.0.0.1:5000
 
 ## Notes for Maintainers
 
-- Database path is configured in app.__init__ as data/preppulse.db.
+- Database path is configured in app.__init__ as data/learnova_ai.db.
 - RAG vector initialization runs during app startup.
 - If you update the knowledge-base JSON files, restart the app and validate KB and RAG behavior.
 - A helper script exists for sqlite to postgres migration in scripts/migrate_sqlite_to_postgres.py.
