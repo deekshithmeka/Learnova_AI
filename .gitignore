@@ -1,0 +1,14 @@
+data/
+*.db
+
+# Secrets and local environment
+.env
+.env.*
+
+# Python caches/bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
