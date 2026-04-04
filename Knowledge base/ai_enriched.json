@@ -654,34 +654,15 @@
       ],
       "id": "AI_037",
       "generated_at": "/Users/deekshithmeka/Documents/PrepPulse-main"
-    },
-    {
-      "type": "course",
-      "title": "Introduction to Basic Communication",
-      "description": "This course covers the fundamentals of communication, including verbal and non-verbal cues, and provides students with the skills to effectively interact with others. The course is designed to help students understand the importance of clear communication in personal and professional settings. By the end of the course, students will be able to apply their knowledge to real-life situations.",
-      "duration_hours": 40,
-      "level": "Beginner",
-      "instructor": "Expert Instructor",
-      "key_topics": [
-        "Verbal Communication",
-        "Non-Verbal Communication",
-        "Conflict Resolution"
-      ],
-      "learning_outcomes": [
-        "Apply effective communication skills in personal and professional settings",
-        "Understand the importance of clear communication in building relationships"
-      ],
-      "id": "AI_038",
-      "generated_at": "/Users/deekshithmeka/Documents/PrepPulse-main"
     }
   ],
   "ai_generated_assessments": [],
   "ai_generated_certifications": [],
   "ai_generated_learning_paths": [],
   "metadata_tracking": {
-    "total_ai_entries": 34,
+    "total_ai_entries": 33,
     "entries_by_type": {
-      "course": 34,
+      "course": 33,
       "assessment": 0,
       "certification": 0,
       "learning_path": 0

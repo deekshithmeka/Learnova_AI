@@ -52,7 +52,7 @@ PrepPulse is a Flask-based student learning platform with AI-assisted tutoring, 
 ## Project Layout
 
 ```text
-LearnovaAI/
+AITAM/
 |- run.py
 |- requirements.txt
 |- app/
@@ -217,4 +217,6 @@ App URL: http://127.0.0.1:5000
 - If you update the knowledge-base JSON files, restart the app and validate KB and RAG behavior.
 - A helper script exists for sqlite to postgres migration in scripts/migrate_sqlite_to_postgres.py.
 
+## License
 
+Built for a hackathon and ongoing internal development.

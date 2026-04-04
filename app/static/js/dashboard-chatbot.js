@@ -2,25 +2,8 @@
   const chatMessages = document.getElementById('chat-messages');
   const chatInput = document.getElementById('chat-input');
   const chatSendBtn = document.getElementById('chat-send-btn');
-  const chatbotRobot = document.getElementById('chatbot-robot');
-  const splineViewer = chatbotRobot ? chatbotRobot.querySelector('spline-viewer') : null;
 
   if (!chatMessages || !chatInput || !chatSendBtn) return;
-
-  const markBotReady = () => {
-    if (!chatbotRobot) return;
-    chatbotRobot.classList.remove('bot-loading');
-    chatbotRobot.classList.add('bot-ready');
-  };
-
-  if (splineViewer) {
-    ['load', 'ready', 'spline-load'].forEach((eventName) => {
-      splineViewer.addEventListener(eventName, markBotReady, { once: true });
-    });
-
-    // Fallback: ensure we don't keep the skeleton forever on slower event dispatch.
-    setTimeout(markBotReady, 2200);
-  }
 
   /* ── Load chat history on page load ── */
   const loadChatHistory = async () => {

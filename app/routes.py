@@ -698,8 +698,8 @@ def login():
         if not email or not password:
             error = "Please enter both email and password."
         # ── Admin shortcut ──
-        elif email == "deekshithm@gmail.com" and password == "Deekshith":
-            session["user_email"] = "deekshithm@gmail.com"
+        elif email == "admin@gmail.com" and password == "admin":
+            session["user_email"] = "admin@gmail.com"
             session["is_admin"] = True
             return redirect(url_for("main.admin_dashboard"))
         else:
@@ -2184,65 +2184,11 @@ def _extract_transcript_payload(apify_response):
 def _sanitize_mermaid_mindmap(raw_text: str) -> str:
     """Normalize Gemini output into clean Mermaid mindmap syntax."""
     mermaid_code = (raw_text or "").replace("```mermaid", "").replace("```", "").strip()
-    
-    # Remove any leading/trailing whitespace per line
-    lines = [line.rstrip() for line in mermaid_code.split('\n')]
-    lines = [line for line in lines if line.strip()]
-    
-    # Ensure it starts with mindmap
-    if not lines or not lines[0].lower().startswith("mindmap"):
-        lines = ["mindmap"] + lines
-    
-    # Find and keep only the FIRST root node
-    # Remove all other root nodes (they are invalid in Mermaid mindmap)
-    fixed_lines = []
-    root_found = False
-    
-    for i, line in enumerate(lines):
-        stripped = line.lstrip()
-        spaces = len(line) - len(stripped)
-        
-        if i == 0:  # mindmap line
-            fixed_lines.append(stripped)
-        elif "root((" in stripped and not root_found:
-            # First root with Format: root((Text)) - keep it with 2 spaces
-            fixed_lines.append("  " + stripped)
-            root_found = True
-        elif stripped.startswith("root(") and not stripped.startswith("root((") and not root_found:
-            # First root with Format: root(Text) - keep it with 2 spaces
-            fixed_lines.append("  " + stripped)
-            root_found = True
-        elif ("root((" in stripped or (stripped.startswith("root(") and not stripped.startswith("root(("))) and root_found:
-            # Duplicate root - convert to main branch by removing root() wrapper
-            if "root((" in stripped:
-                branch_content = stripped.replace("root((", "").replace("))", "")
-            else:
-                branch_content = stripped.replace("root(", "").replace(")", "")
-            # Add as main branch (4 spaces indentation)
-            fixed_lines.append("    " + branch_content)
-        else:
-            # Regular content - normalize indentation based on original spacing
-            if root_found:
-                # Calculate relative indentation (maintain structure, just normalize spacing)
-                # Get indentation level from original
-                level = max(1, spaces // 2) if spaces > 0 else 1
-                indent = "  " * level
-                fixed_lines.append(indent + stripped)
-            else:
-                # Before root found, just keep the line with normalized spacing
-                level = max(1, spaces // 2) if spaces > 0 else 1
-                indent = "  " * level
-                fixed_lines.append(indent + stripped)
-    
-    # Ensure we have at least a root node
-    if not root_found:
-        if len(fixed_lines) > 1:
-            fixed_lines.insert(1, "  root((Overview))")
-        else:
-            fixed_lines.append("  root((Overview))")
-    
-    result = "\n".join(fixed_lines).strip()
-    return result
+    if not mermaid_code.lower().startswith("mindmap"):
+        mermaid_code = f"mindmap\n{mermaid_code}" if mermaid_code else "mindmap"
+    if "root((" not in mermaid_code:
+        mermaid_code += "\n  root((Video Summary))"
+    return mermaid_code.strip()
 
 
 def _generate_basic_mindmap(video_title: str, transcript: str) -> str:

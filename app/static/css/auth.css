@@ -1819,28 +1819,6 @@
     inset: 0;
     transform: translateX(-8px);
     margin: 0;
-    opacity: 1;
-    transition: opacity 0.35s ease;
-}
-
-.chatbot-robot.bot-loading spline-viewer {
-    opacity: 0;
-}
-
-.chatbot-robot.bot-loading::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 30% 28%, rgba(45, 212, 191, 0.18), rgba(8, 10, 20, 0.9) 65%);
-    z-index: 1;
-}
-
-.chatbot-robot.bot-loading::after {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-}
-
-.chatbot-robot.bot-ready spline-viewer {
-    opacity: 1;
 }
 
 .chat-panel {
