@@ -13,11 +13,14 @@
     const codeWrap = document.getElementById("yt-code-wrap");
     const emptyState = document.getElementById("yt-empty-state");
 
-    const mindmapImage = document.getElementById("mindmap-image");
-    const openSvgLink = document.getElementById("open-svg-link");
+    const diagramWrap = document.getElementById("mermaid-diagram");
+    const downloadSvgBtn = document.getElementById("download-svg-btn");
     const openEditorLink = document.getElementById("open-editor-link");
     const codeBlock = document.getElementById("mermaid-code");
     const copyBtn = document.getElementById("copy-mermaid-btn");
+
+    let currentMermaidCode = "";
+    let currentVideoTitle = "";
 
     function showAlert(message, type) {
         if (!alertBox) return;
@@ -34,22 +37,98 @@
         const btnText = generateBtn.querySelector(".btn-text");
         const btnLoader = generateBtn.querySelector(".btn-loader");
 
-        generateBtn.disabled = loading;
-        if (btnText) btnText.textContent = loading ? "Generating..." : "Generate Mindmap";
-        if (btnLoader) btnLoader.hidden = !loading;
+        // Ensure proper state reset
+        if (loading) {
+            generateBtn.disabled = true;
+            if (btnText) btnText.textContent = "Generating...";
+            if (btnLoader) {
+                btnLoader.hidden = false;
+                btnLoader.style.display = 'inline-block';
+            }
+        } else {
+            generateBtn.disabled = false;
+            if (btnText) btnText.textContent = "Generate Mindmap";
+            if (btnLoader) {
+                btnLoader.hidden = true;
+                btnLoader.style.display = 'none';
+            }
+        }
+    }
+
+    function renderMermaidImage(imageUrl) {
+        try {
+            if (!diagramWrap) return;
+
+            // Clear previous content
+            diagramWrap.innerHTML = '';
+            
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Generated Mermaid mindmap";
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.style.borderRadius = '8px';
+            
+            img.onerror = () => {
+                diagramWrap.innerHTML = '<p style="color: #ff8b8b; padding: 20px; text-align: center;">Failed to load mindmap image. Please check the Mermaid code below.</p>';
+            };
+            
+            diagramWrap.appendChild(img);
+        } catch (error) {
+            console.error('Failed to render mermaid diagram:', error);
+            if (diagramWrap) {
+                diagramWrap.innerHTML = '<p style="color: #ff8b8b; padding: 20px; text-align: center;">Failed to render diagram.</p>';
+            }
+        }
+    }
+
+    async function downloadSvg() {
+        try {
+            if (!currentMermaidCode) {
+                showAlert("No diagram to download.", "error");
+                return;
+            }
+
+            const encoded = base64url(currentMermaidCode);
+            const svgUrl = `https://mermaid.ink/svg/${encoded}`;
+            const response = await fetch(svgUrl);
+            const svgText = await response.text();
+            
+            const blob = new Blob([svgText], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = (currentVideoTitle || 'mindmap').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.svg';
+            link.click();
+            URL.revokeObjectURL(url);
+            showAlert("SVG downloaded successfully.", "success");
+        } catch (error) {
+            console.error('Download failed:', error);
+            showAlert("Failed to download SVG.", "error");
+        }
+    }
+
+    function base64url(str) {
+        return btoa(str)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
     }
 
     function renderResult(data) {
-        if (metaVideoTitle) metaVideoTitle.textContent = data.videoTitle || "YouTube Video";
+        currentMermaidCode = data.mermaidCode || "";
+        currentVideoTitle = data.videoTitle || "YouTube Video";
+
+        if (metaVideoTitle) metaVideoTitle.textContent = currentVideoTitle;
         if (metaCharCount) metaCharCount.textContent = String(data.charCount || 0);
 
-        if (mindmapImage) {
-            mindmapImage.src = data.imageUrl;
-            mindmapImage.alt = (data.videoTitle || "Video") + " mindmap";
-        }
-        if (openSvgLink) openSvgLink.href = data.svgUrl;
+        if (codeBlock) codeBlock.textContent = currentMermaidCode;
         if (openEditorLink) openEditorLink.href = data.editorUrl;
-        if (codeBlock) codeBlock.textContent = data.mermaidCode || "";
+
+        // Use imageUrl from backend (already properly encoded)
+        if (data.imageUrl) {
+            renderMermaidImage(data.imageUrl);
+        }
 
         if (previewWrap) previewWrap.hidden = false;
         if (codeWrap) codeWrap.hidden = false;
@@ -84,7 +163,12 @@
         } catch (error) {
             showAlert(error.message || "Failed to generate mindmap.", "error");
         } finally {
+            // Ensure loading state is reset
             setLoading(false);
+            // Force a double-check after a brief delay
+            setTimeout(() => {
+                setLoading(false);
+            }, 100);
         }
     }
 
@@ -108,5 +192,9 @@
 
     if (copyBtn) {
         copyBtn.addEventListener("click", copyCode);
+    }
+
+    if (downloadSvgBtn) {
+        downloadSvgBtn.addEventListener("click", downloadSvg);
     }
 })();

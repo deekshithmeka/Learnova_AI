@@ -4,250 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Learnova AI</title>
-    <meta name="description" content="Learnova AI Placement Readiness Dashboard — track skills, practice coding, take mock tests, and prepare for placements.">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Material Symbols for sidebar icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body class="page-fade page-fade-ready dashboard-page">
     <main class="auth-page">
         <iframe class="spline-bg" src="https://my.spline.design/verticalaccordioncopycopycopy-T3tsr1SeYNM2ITtQAB59LCH7-il6/"></iframe>
+        <div class="auth-brand">Learnova AI</div>
 
-        <!-- ═══ MOBILE TOP BAR (visible on small screens only) ═══ -->
-        <div class="mobile-topbar">
-            <span class="mobile-topbar-brand">Learnova AI</span>
-            <a href="{{ url_for('main.logout') }}" class="mobile-topbar-logout">
-                <span class="material-symbols-outlined">logout</span> Logout
-            </a>
-        </div>
-
-        <!-- ═══ LEFT SIDEBAR ═══ -->
-        <aside class="dash-sidebar" id="dash-sidebar">
-            <!-- Brand -->
-            <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">L</div>
-                <div>
-                    <div class="sidebar-brand-text">Learnova AI</div>
-                    <div class="sidebar-brand-sub">Placement Core</div>
+        <!-- ═══ NAVBAR ═══ -->
+        <nav class="dash-navbar">
+            <div class="dash-navbar-inner">
+                <span class="dash-nav-brand">Learnova AI</span>
+                <div class="dash-nav-links">
+                    <a href="#skill-checklist" class="dash-nav-link active" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Skill Checklist
+                    </a>
+                    <a href="{{ url_for('main.progress_page') }}" class="dash-nav-link" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/></svg>
+                        Progress Tracker
+                    </a>
+                    <a href="{{ url_for('main.note_maker_page') }}" class="dash-nav-link" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/><path d="M8 14l2 2 4-4"/></svg>
+                        Instant Note Maker
+                    </a>
+                    <a href="{{ url_for('main.resume_page') }}" class="dash-nav-link" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                        Resume Analyzer
+                    </a>
+                    <a href="{{ url_for('main.resources_page') }}" class="dash-nav-link" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="6" x2="12" y2="14"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
+                        Resources
+                    </a>
+                    <a href="{{ url_for('main.youtube_mindmap_page') }}" class="dash-nav-link" data-nav-link>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7.5a2.5 2.5 0 0 0-1.8-1.8C17.5 5.2 12 5.2 12 5.2s-5.5 0-7.2.5A2.5 2.5 0 0 0 3 7.5 26.6 26.6 0 0 0 2.5 12c0 1.5.2 3 .5 4.5a2.5 2.5 0 0 0 1.8 1.8c1.7.5 7.2.5 7.2.5s5.5 0 7.2-.5a2.5 2.5 0 0 0 1.8-1.8c.3-1.5.5-3 .5-4.5 0-1.5-.2-3-.5-4.5z"/><polygon points="10 15.3 15.5 12 10 8.7 10 15.3"/></svg>
+                        YT Mindmap
+                    </a>
                 </div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="sidebar-nav">
-                <div class="sidebar-section-label">Main</div>
-
-                <a href="{{ url_for('main.dashboard') }}" class="sidebar-link active" id="nav-dashboard">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#skill-checklist" class="sidebar-link" id="nav-skills">
-                    <span class="material-symbols-outlined">trending_up</span>
-                    <span>Skill Progress</span>
-                </a>
-                <a href="{{ url_for('main.progress_page') }}" class="sidebar-link" id="nav-progress">
-                    <span class="material-symbols-outlined">fact_check</span>
-                    <span>Progress Tracker</span>
-                </a>
-
-                <div class="sidebar-section-label">Practice</div>
-
-                <a href="#coding-practice" class="sidebar-link" id="nav-coding">
-                    <span class="material-symbols-outlined">code</span>
-                    <span>Coding Practice</span>
-                </a>
-                <a href="{{ url_for('main.mock_tests_page') }}" class="sidebar-link" id="nav-mocktests">
-                    <span class="material-symbols-outlined">quiz</span>
-                    <span>Mock Tests</span>
-                </a>
-                <a href="#ai-interview" class="sidebar-link" id="nav-interview">
-                    <span class="material-symbols-outlined">psychology</span>
-                    <span>AI Interview</span>
-                </a>
-
-                <div class="sidebar-section-label">Tools</div>
-
-                <a href="{{ url_for('main.resume_page') }}" class="sidebar-link" id="nav-resume">
-                    <span class="material-symbols-outlined">description</span>
-                    <span>Resume Analyzer</span>
-                </a>
-                <a href="{{ url_for('main.note_maker_page') }}" class="sidebar-link" id="nav-notes">
-                    <span class="material-symbols-outlined">edit_note</span>
-                    <span>Instant Notes</span>
-                </a>
-                <a href="{{ url_for('main.youtube_mindmap_page') }}" class="sidebar-link" id="nav-mindmap">
-                    <span class="material-symbols-outlined">account_tree</span>
-                    <span>YT Mindmap</span>
-                </a>
-
-                <div class="sidebar-section-label">Community</div>
-
-                <a href="{{ url_for('main.resources_page') }}" class="sidebar-link" id="nav-resources">
-                    <span class="material-symbols-outlined">library_books</span>
-                    <span>Resources</span>
-                </a>
-                <a href="#leaderboard" class="sidebar-link" id="nav-leaderboard">
-                    <span class="material-symbols-outlined">leaderboard</span>
-                    <span>Leaderboard</span>
-                </a>
-            </nav>
-
-            <!-- Footer -->
-            <div class="sidebar-footer">
-                <div class="sidebar-user">
-                    <div class="sidebar-avatar">
-                        <span class="material-symbols-outlined">person</span>
-                    </div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name">{{ session.get('user_email', 'Student') }}</div>
-                        <div class="sidebar-user-role">B.Tech • Student</div>
-                    </div>
-                </div>
-                <a href="{{ url_for('main.logout') }}" class="sidebar-logout">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span>Logout</span>
+                <a href="{{ url_for('main.logout') }}" class="dash-nav-logout" title="Logout">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
                 </a>
             </div>
-        </aside>
+        </nav>
 
-        <!-- ═══ MAIN CONTENT ═══ -->
         <div class="auth-shell">
-            <!-- Welcome Header -->
-            <div class="dash-welcome">
-                <p class="dash-welcome-kicker">Placement Readiness</p>
-                <h1 class="dash-welcome-title">Welcome back 👋</h1>
-                <p class="dash-welcome-sub">Track, improve, and master the skills required to crack top company placements.</p>
-            </div>
-
-            <!-- ═══ MODULE CARD GRID ═══ -->
-            <section class="module-grid">
-
-                <!-- ── 1. Skill Progress Summary ── -->
-                <div class="mod-card" id="skill-progress-card">
-                    <div class="mod-card-header">
-                        <div class="mod-card-icon orange">
-                            <span class="material-symbols-outlined">analytics</span>
-                        </div>
-                        <div>
-                            <div class="mod-card-title">Skill Progress</div>
-                            <div class="mod-card-subtitle">Placement readiness overview</div>
-                        </div>
-                    </div>
-                    <div class="mod-card-body">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <span class="readiness-value" data-readiness-value style="font-size:1.5rem; font-weight:700; color:#FF6B35;">0%</span>
-                            <span class="readiness-label" data-readiness-label style="font-size:0.72rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px;">Building momentum</span>
-                        </div>
-                        <div class="readiness-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="margin-bottom:12px;">
-                            <span class="readiness-fill"></span>
-                        </div>
-                        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:8px;">
-                            <div style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); text-align:center;">
-                                <div class="stat-value" data-done-count style="font-size:1.1rem; font-weight:600; color:#2dd4bf;">0</div>
-                                <div style="font-size:0.65rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Learned</div>
-                            </div>
-                            <div style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); text-align:center;">
-                                <div class="stat-value" data-pending-count style="font-size:1.1rem; font-weight:600; color:#FF6B35;">0</div>
-                                <div style="font-size:0.65rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Pending</div>
-                            </div>
-                            <div style="padding:10px; border-radius:10px; background:rgba(255,255,255,0.04); text-align:center;">
-                                <div style="font-size:1.1rem; font-weight:600; color:#fff;">{{ group_count }}</div>
-                                <div style="font-size:0.65rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-top:2px;">Skill Lanes</div>
-                            </div>
-                        </div>
-                        <div class="focus-row" data-syllabus-tags style="margin-top:10px;"></div>
-                    </div>
-                </div>
-
-                <!-- ── 2. Coding Practice ── -->
-                <div class="mod-card" id="coding-practice">
-                    <div class="mod-card-header">
-                        <div class="mod-card-icon teal">
-                            <span class="material-symbols-outlined">terminal</span>
-                        </div>
-                        <div>
-                            <div class="mod-card-title">Coding Practice</div>
-                            <div class="mod-card-subtitle">375 DSA Questions</div>
-                        </div>
-                    </div>
-                    <div class="mod-card-body">
-                        <div class="coding-card-tags">
-                            <span class="coding-tag" id="coding-pct">0%</span>
-                            <span class="coding-tag daily">DSA Sheet</span>
-                        </div>
-                        <div class="coding-card-problem">
-                            <div class="coding-card-problem-title"><span id="coding-solved">0</span> / <span id="coding-total">375</span> Problems Solved</div>
-                            <div class="coding-progress-outer"><div class="coding-progress-inner" id="coding-progress-bar"></div></div>
-                        </div>
-                        <div class="coding-card-footer">
-                            <div class="coding-streak">
-                                <span class="material-symbols-outlined" style="font-size:1rem;">local_fire_department</span>
-                                <span class="coding-streak-value" id="coding-streak">0 days</span> streak
-                            </div>
-                            <button onclick="PrepPulse.loadDailyQuestion()" class="mod-btn mod-btn-primary">
-                                <span class="material-symbols-outlined" style="font-size:0.9rem;">play_arrow</span> Solve
-                            </button>
-                            <button onclick="PrepPulse.loadCodingTopics()" class="mod-btn mod-btn-ghost" style="margin-left:6px">
-                                <span class="material-symbols-outlined" style="font-size:0.9rem;">list</span> Topics
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── 3. Mock Tests ── -->
-                <div class="mod-card" id="mock-tests-card">
-                    <div class="mod-card-header">
-                        <div class="mod-card-icon orange">
-                            <span class="material-symbols-outlined">quiz</span>
-                        </div>
-                        <div>
-                            <div class="mod-card-title">Scheduled Mock Tests</div>
-                            <div class="mod-card-subtitle">Upcoming assessments</div>
-                        </div>
-                    </div>
-                    <div class="mod-card-body">
-                        <div class="mock-test-list">
-                            <div class="mock-test-item">
-                                <div>
-                                    <div class="mock-test-name">Aptitude & Reasoning</div>
-                                    <div class="mock-test-meta">25 mins • 30 Questions</div>
-                                </div>
-                                <span class="mock-test-badge">High Priority</span>
-                            </div>
-                            <div class="mock-test-item">
-                                <div>
-                                    <div class="mock-test-name">Technical MCQ</div>
-                                    <div class="mock-test-meta">40 mins • 20 Questions</div>
-                                </div>
-                                <span class="mock-test-badge">Intermediate</span>
-                            </div>
-                            <div class="mock-test-item">
-                                <div>
-                                    <div class="mock-test-name">TCS Mock Test</div>
-                                    <div class="mock-test-meta">60 mins • Full Length</div>
-                                </div>
-                                <span class="mock-test-badge">Simulation</span>
-                            </div>
-                        </div>
-                        <div style="margin-top:12px;">
-                            <a href="{{ url_for('main.mock_tests_page') }}" class="mod-btn mod-btn-ghost">
-                                <span class="material-symbols-outlined" style="font-size:0.9rem;">arrow_forward</span> View All Tests
-                            </a>
-                        </div>
-                    </div>
-
+            <section class="auth-left dashboard-intro" id="skill-checklist">
+                <p class="auth-kicker">Dashboard</p>
+                <h1 class="auth-title">Placement readiness</h1>
+                <p class="auth-lead">Track the skills that matter for placements and see how close you are to readiness.</p>
             </section>
 
+            <section class="dashboard-top-row">
+                <div class="dash-summary">
+                    <div class="summary-header">
+                        <div>
+                            <p class="summary-eyebrow">Skill checklist</p>
+                            <h2 class="summary-title">Your placement syllabus</h2>
+                        </div>
+                        <div class="readiness-badge">
+                            <span class="readiness-value" data-readiness-value>0%</span>
+                            <span class="readiness-label" data-readiness-label>Building momentum</span>
+                        </div>
+                    </div>
 
+                    <div class="readiness-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <span class="readiness-fill"></span>
+                    </div>
 
-            <!-- ═══ AI CHATBOT (PRESERVED) ═══ -->
+                    <div class="summary-stats">
+                        <div class="summary-stat stat-done">
+                            <span class="stat-value" data-done-count>0</span>
+                            <span class="stat-label">Learned</span>
+                        </div>
+                        <div class="summary-stat stat-pending">
+                            <span class="stat-value" data-pending-count>0</span>
+                            <span class="stat-label">Pending</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-value">{{ group_count }}</span>
+                            <span class="stat-label">Skill lanes</span>
+                        </div>
+                    </div>
+
+                    <div class="focus-row" data-syllabus-tags></div>
+                </div>
+
+                <section class="auth-card checklist-card">
+                    <div class="card-header">
+                        <p class="card-eyebrow">Placement tracker</p>
+                        <h2 class="card-title">Skill checklist</h2>
+                        <p class="card-subtitle">Check off what you have learned and track what is still pending.</p>
+                    </div>
+
+                    <div class="checklist-status">
+                        <div class="status-pill status-done" data-status-pill>Learned</div>
+                        <div class="status-pill status-pending" data-status-pill>Pending</div>
+                    </div>
+
+                    <div class="skill-checklist">
+                        {% for group in checklist["groups"] %}
+                        <div class="checklist-group">
+                            <div class="group-title">{{ group["name"] }}</div>
+                            {% for item in group["items"] %}
+                            <label class="checklist-item" data-item-id="{{ item["id"] }}">
+                                <input type="checkbox" {% if item["status"] == "learned" %}checked{% endif %}>
+                                <span class="checklist-text">
+                                    <span class="skill-name">{{ item["name"] }}</span>
+                                    {% if item["meta"] %}
+                                    <span class="skill-meta">{{ item["meta"] }}</span>
+                                    {% endif %}
+                                </span>
+                                <span class="status-pill {% if item["status"] == "learned" %}is-done{% else %}is-pending{% endif %}" data-item-status>
+                                    {% if item["status"] == "learned" %}Learned{% else %}Pending{% endif %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </section>
+
+            <!-- AI Chatbot -->
             <section class="chatbot-wrapper reveal">
                     <div class="section-header" style="margin-bottom: 10px;">
                         <div class="pill">
@@ -260,8 +141,8 @@
 
                     <div class="chat-shell">
                         <div class="chatbot-container">
-                            <div class="chatbot-robot">
-                                <spline-viewer url="https://prod.spline.design/oNMzWOQrsYUZkE-4/scene.splinecode"></spline-viewer>
+                            <div class="chatbot-robot bot-loading" id="chatbot-robot">
+                                <spline-viewer url="https://prod.spline.design/uJjpOr7mxTE0O1cT/scene.splinecode"></spline-viewer>
                             </div>
                             <div class="chat-panel">
                                 <div class="chat-messages" id="chat-messages">
@@ -297,21 +178,6 @@
     </script>
     <script src="{{ url_for('static', filename='js/skill-checklist.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard-chatbot.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dashboard-modules.js') }}"></script>
     <script src="{{ url_for('static', filename='js/page-transition.js') }}"></script>
-
-    <!-- ═══ MODALS ═══ -->
-    <div class="module-modal" id="coding-modal">
-        <div class="modal-content"><button class="modal-close" onclick="PrepPulse.closeModal('coding-modal')">&times;</button><div class="modal-body"></div></div>
-    </div>
-    <div class="module-modal" id="interview-modal">
-        <div class="modal-content"><button class="modal-close" onclick="PrepPulse.closeModal('interview-modal')">&times;</button><div class="modal-body"></div></div>
-    </div>
-    <div class="module-modal" id="pipeline-modal">
-        <div class="modal-content"><button class="modal-close" onclick="PrepPulse.closeModal('pipeline-modal')">&times;</button><div class="modal-body"></div></div>
-    </div>
-    <div class="module-modal" id="leaderboard-modal">
-        <div class="modal-content"><button class="modal-close" onclick="PrepPulse.closeModal('leaderboard-modal')">&times;</button><div class="modal-body"></div></div>
-    </div>
 </body>
 </html>
