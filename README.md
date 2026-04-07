@@ -136,9 +136,9 @@ If port 5000 is already occupied, the project may run on 5001 depending on your 
 - Chat APIs: message generation, history fetch/delete
 - Notes APIs: generate, PDF export, upload to resources
 - Resource APIs: user and admin workflows
-- Resume APIs: upload, analyze, retrieve
-- Progress APIs: habits, logs, leaderboard, mock tests
-- Knowledge-base APIs: add/search/status endpoints
+- Resume APIs: upload, analyze, retrieve.
+- Progress APIs: habits, logs, leaderboard, mock tests.
+- Knowledge-base APIs: add/search/status endpoints.
 
 ## Operational Notes
 
