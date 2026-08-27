@@ -2,7 +2,7 @@
   "metadata": {
     "file_name": "ai_enriched.json",
     "description": "AI-generated and OpenAI-enriched knowledge base content",
-    "last_updated": "/Users/deekshithmeka/Documents/PrepPulse-main",
+    "last_updated": "/Users/deekshithmeka/Documents/learnova_ai",
     "version": "1.0",
     "purpose": "Store courses, assessments, certifications discovered via OpenAI API when user queries about content not in original KB"
   },
