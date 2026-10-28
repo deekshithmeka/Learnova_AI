@@ -112,6 +112,8 @@ SMTP_USER=your-email@example.com
 SMTP_PASSWORD=your-app-password
 SMTP_USE_TLS=true
 
+# Optional: YouTube transcripts via Apify. Without a token, or for videos without captions,
+# the app falls back to youtube-transcript-api.
 APIFY_API_TOKEN=optional-apify-token
 APIFY_YOUTUBE_ACTOR_ID=shephouse~youtube-transcript-scraper-bulk
 
