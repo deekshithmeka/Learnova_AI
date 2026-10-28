@@ -2358,7 +2358,7 @@ def _fetch_transcript_from_apify(youtube_url: str):
     """Fetch transcript using configured Apify actor."""
     apify_token = current_app.config.get("APIFY_API_TOKEN") or os.getenv("APIFY_API_TOKEN")
     actor_id = current_app.config.get("APIFY_YOUTUBE_ACTOR_ID") or os.getenv(
-        "APIFY_YOUTUBE_ACTOR_ID", "pintostudio~youtube-transcript"
+        "APIFY_YOUTUBE_ACTOR_ID", "shephouse~youtube-transcript-scraper-bulk"
     )
 
     if not apify_token:
@@ -2370,9 +2370,9 @@ def _fetch_transcript_from_apify(youtube_url: str):
         f"?token={apify_token}&timeout=120"
     )
     payload = {
-        "urls": [youtube_url],
-        "includeTimestamps": False,
-        "language": "en",
+        "startUrls": [{"url": youtube_url}],
+        "languages": ["en"],
+        "maxTranscripts": 1,
     }
 
     try:
@@ -2383,7 +2383,17 @@ def _fetch_transcript_from_apify(youtube_url: str):
             timeout=120,
         )
         response.raise_for_status()
-        return response.json()
+        items = response.json()
+        rows = items if isinstance(items, list) else [items]
+        # Videos without captions come back as {"status": "FAILED", "errorCode", "errorMessage"} (not charged).
+        if rows and all(isinstance(row, dict) and row.get("status") not in (None, "OK") for row in rows):
+            logging.warning(
+                "Apify returned no transcript (%s: %s). Falling back to youtube-transcript-api.",
+                rows[0].get("errorCode") or rows[0].get("status"),
+                rows[0].get("errorMessage", ""),
+            )
+            return _fetch_transcript_from_youtube_api(youtube_url)
+        return items
     except http_requests.RequestException as exc:
         status_code = getattr(getattr(exc, "response", None), "status_code", None)
         if status_code == 404:
