@@ -46,7 +46,7 @@ def create_app():
     app.config["GROQ_MODEL"] = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     app.config["OPENAI_CHAT_MODEL"] = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
     app.config["APIFY_API_TOKEN"] = os.getenv("APIFY_API_TOKEN", "")
-    app.config["APIFY_YOUTUBE_ACTOR_ID"] = os.getenv("APIFY_YOUTUBE_ACTOR_ID", "pintostudio~youtube-transcript")
+    app.config["APIFY_YOUTUBE_ACTOR_ID"] = os.getenv("APIFY_YOUTUBE_ACTOR_ID", "johnvc~YoutubeTranscripts")
     app.config["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
     app.config["GEMINI_MODEL"] = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 

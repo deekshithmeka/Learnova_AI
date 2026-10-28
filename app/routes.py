@@ -2358,7 +2358,7 @@ def _fetch_transcript_from_apify(youtube_url: str):
     """Fetch transcript using configured Apify actor."""
     apify_token = current_app.config.get("APIFY_API_TOKEN") or os.getenv("APIFY_API_TOKEN")
     actor_id = current_app.config.get("APIFY_YOUTUBE_ACTOR_ID") or os.getenv(
-        "APIFY_YOUTUBE_ACTOR_ID", "pintostudio~youtube-transcript"
+        "APIFY_YOUTUBE_ACTOR_ID", "johnvc~YoutubeTranscripts"
     )
 
     if not apify_token:
@@ -2370,9 +2370,8 @@ def _fetch_transcript_from_apify(youtube_url: str):
         f"?token={apify_token}&timeout=120"
     )
     payload = {
-        "urls": [youtube_url],
-        "includeTimestamps": False,
-        "language": "en",
+        "youtube_url": [youtube_url],
+        "output_formats": ["text"],
     }
 
     try:
